@@ -1,27 +1,41 @@
 #!/usr/bin/python3
-"""a Python script to export data in the CSV format"""
+"""Script that gets user data (Todo list) from API
+and then export the result to csv file. """
 
+import csv
 import requests
 import sys
 
+
+def main():
+    """main function"""
+    user_id = int(sys.argv[1])
+    todo_url = 'https://jsonplaceholder.typicode.com/todos'
+    user_url = 'https://jsonplaceholder.typicode.com/users/{}'.format(user_id)
+
+    file_content = []
+
+    response = requests.get(todo_url)
+    user_name = requests.get(user_url).json().get('username')
+
+    for todo in response.json():
+        if todo.get('userId') == user_id:
+            file_content.append(
+                [str(user_id),
+                 user_name,
+                 todo.get('completed'),
+                 "{}".format(todo.get('title'))])
+
+    print(file_content)
+    file_name = "{}.csv".format(user_id)
+    with open(file_name, 'w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+        for row in file_content:
+            for item in row:
+                str(item)
+            csv_writer.writerow(row)
+        print('file written successfully')
+
+
 if __name__ == "__main__":
-    employee_id = sys.argv[1]
-    url = "https://jsonplaceholder.typicode.com/users/{}".format(employee_id)
-    todo = "https://jsonplaceholder.typicode.com/todos?userId={}"
-    todo = todo.format(employee_id)
-
-    user_info = requests.request("GET", url).json()
-    todo_info = requests.request("GET", todo).json()
-
-    employee_name = user_info.get("name")
-    employee_username = user_info.get("username")
-    total_tasks = list(filter(lambda x: (x["completed"] is True), todo_info))
-    task_com = len(total_tasks)
-    total_task_done = len(todo_info)
-
-    with open(str(employee_id) + '.csv', "w") as f:
-        [f.write('"' + str(employee_id) + '",' +
-                 '"' + employee_username + '",' +
-                 '"' + str(task["completed"]) + '",' +
-                 '"' + task["title"] + '",' + "\n")
-         for task in todo_info]
+    main()
